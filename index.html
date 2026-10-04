@@ -1,0 +1,2010 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#050510" id="metaThemeColor">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="МирЧасы">
+<title>Мировые часы · точное время по всем часовым поясам</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --bg: #050510;
+    --bg2: #0a0a1a;
+    --card: #0f0f1e;
+    --card2: #16162a;
+    --line: #262640;
+    --line-hover: #3a3a5c;
+    --fg: #f2f2ff;
+    --muted: #7d7da0;
+
+    /* Lit Energy palette */
+    --lime: #c6ff00;
+    --lime-dim: #8fb800;
+    --lime-glow: rgba(198, 255, 0, 0.45);
+    --cyan: #00e5ff;
+    --cyan-glow: rgba(0, 229, 255, 0.45);
+    --magenta: #ff2e93;
+    --magenta-glow: rgba(255, 46, 147, 0.4);
+    --purple: #a855f7;
+
+    --accent: var(--lime);
+    --accent2: var(--cyan);
+
+    --night: #5b6cff;
+    --day: #ffcc00;
+
+    --active-bg: linear-gradient(180deg, rgba(198,255,0,0.22), rgba(0,229,255,0.14));
+    --header-bg: rgba(5, 5, 16, 0.82);
+    --big-bg: linear-gradient(135deg, #0d0d1f 0%, #07070f 100%);
+    --big-glow: rgba(198, 255, 0, 0.10);
+    --big-text-glow: rgba(198, 255, 0, 0.55);
+
+    color-scheme: dark;
+  }
+
+  :root[data-theme="light"] {
+    --bg: #f6f7fc;
+    --bg2: #eceefa;
+    --card: #ffffff;
+    --card2: #f2f3fb;
+    --line: #dcdff0;
+    --line-hover: #b9bedd;
+    --fg: #121227;
+    --muted: #666a8a;
+
+    --lime: #4a8000;
+    --lime-dim: #355c00;
+    --lime-glow: rgba(74, 128, 0, 0.35);
+    --cyan: #007a99;
+    --cyan-glow: rgba(0, 122, 153, 0.35);
+    --magenta: #c2005c;
+    --purple: #7c3aed;
+
+    --night: #4f5cd0;
+    --day: #cc8800;
+
+    --active-bg: linear-gradient(180deg, rgba(74,128,0,0.18), rgba(0,122,153,0.12));
+    --header-bg: rgba(246, 247, 252, 0.86);
+    --big-bg: linear-gradient(135deg, #ffffff 0%, #eef1fb 100%);
+    --big-glow: rgba(74, 128, 0, 0.12);
+    --big-text-glow: rgba(74, 128, 0, 0.28);
+
+    color-scheme: light;
+  }
+
+  html, body {
+    min-height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    -webkit-font-smoothing: antialiased;
+    transition: background-color 0.25s, color 0.25s;
+  }
+
+  /* Ambient "lit energy" background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background:
+      radial-gradient(circle at 12% 15%, var(--lime-glow), transparent 42%),
+      radial-gradient(circle at 88% 82%, var(--cyan-glow), transparent 42%),
+      radial-gradient(circle at 55% 45%, var(--magenta-glow), transparent 55%);
+    opacity: 0.28;
+    pointer-events: none;
+    transition: opacity 0.25s;
+  }
+  :root[data-theme="light"] body::before { opacity: 0.14; }
+
+  body { padding: 24px 16px 60px; }
+
+  .wrap { max-width: 1240px; margin: 0 auto; }
+
+  /* ============ HEADER ============ */
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 60;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin: -12px 0 20px;
+    padding: 12px 0 14px;
+    flex-wrap: wrap;
+    background: var(--header-bg);
+    backdrop-filter: blur(18px) saturate(1.4);
+    -webkit-backdrop-filter: blur(18px) saturate(1.4);
+    transition: background-color 0.25s;
+  }
+  header::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 1px;
+    background: linear-gradient(90deg,
+      transparent 0%,
+      var(--lime) 20%,
+      var(--cyan) 50%,
+      var(--magenta) 80%,
+      transparent 100%);
+    opacity: 0.55;
+  }
+  h1 {
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  h1 .ico {
+    width: 36px; height: 36px;
+    border-radius: 11px;
+    background: linear-gradient(135deg, var(--lime), var(--cyan));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,0.08) inset,
+      0 6px 18px var(--lime-glow),
+      0 0 34px rgba(0,229,255,0.28);
+    color: #050510;
+  }
+  :root[data-theme="light"] h1 .ico { color: #ffffff; }
+
+  .sub {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 4px;
+    margin-left: 46px;
+  }
+  .sub b { color: var(--fg); font-weight: 700; }
+
+  .controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .search { position: relative; }
+  .search input {
+    padding: 9px 34px 9px 34px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    color: var(--fg);
+    font: inherit;
+    font-size: 13px;
+    outline: none;
+    width: 240px;
+    transition: border-color 0.15s, box-shadow 0.2s, background-color 0.25s;
+  }
+  .search input::placeholder { color: var(--muted); }
+  .search input:focus {
+    border-color: var(--lime);
+    box-shadow: 0 0 0 3px rgba(198,255,0,0.15), 0 0 24px rgba(198,255,0,0.18);
+  }
+  .search::before {
+    content: '🔍';
+    position: absolute;
+    left: 11px; top: 50%;
+    transform: translateY(-50%);
+    font-size: 12px;
+    opacity: 0.55;
+    pointer-events: none;
+  }
+  .search .clear {
+    position: absolute;
+    right: 6px; top: 50%;
+    transform: translateY(-50%);
+    border: 0;
+    background: transparent;
+    color: var(--muted);
+    font-size: 15px;
+    cursor: pointer;
+    padding: 4px 7px;
+    border-radius: 7px;
+    display: none;
+    line-height: 1;
+    transition: color 0.15s, background-color 0.15s;
+  }
+  .search .clear:hover { color: var(--magenta); background: var(--card2); }
+  .search.has-value .clear { display: block; }
+
+  .toggle {
+    display: flex;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: background-color 0.25s, border-color 0.25s;
+  }
+  .toggle button {
+    padding: 9px 14px;
+    background: transparent;
+    border: 0;
+    color: var(--muted);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+  }
+  .toggle button:hover { color: var(--fg); }
+  .toggle button.active {
+    background: var(--active-bg);
+    color: var(--fg);
+    box-shadow: inset 0 0 0 1px rgba(198,255,0,0.28), 0 0 16px rgba(198,255,0,0.18);
+    text-shadow: 0 0 12px var(--lime-glow);
+  }
+
+  .icon-btn {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    color: var(--fg);
+    font-size: 15px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    flex-shrink: 0;
+    padding: 0;
+  }
+  .icon-btn:hover {
+    border-color: var(--lime);
+    color: var(--lime);
+    box-shadow: 0 0 0 3px rgba(198,255,0,0.12), 0 0 20px rgba(198,255,0,0.2);
+  }
+  .icon-btn.active {
+    background: var(--active-bg);
+    border-color: transparent;
+    color: var(--lime);
+    box-shadow: inset 0 0 0 1px rgba(198,255,0,0.35), 0 0 22px rgba(198,255,0,0.28);
+  }
+
+  /* ============ BIG CLOCK ============ */
+  .big {
+    background: var(--big-bg);
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    padding: 34px 24px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+    text-align: center;
+    transition: background 0.25s, border-color 0.25s;
+  }
+  .big::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 0%, var(--big-glow), transparent 65%);
+    pointer-events: none;
+  }
+  .big::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 120%, rgba(0,229,255,0.10), transparent 60%);
+    pointer-events: none;
+  }
+  /* Corner brackets */
+  .big .corner {
+    position: absolute;
+    width: 22px; height: 22px;
+    border: 2px solid var(--lime);
+    opacity: 0.65;
+    pointer-events: none;
+    filter: drop-shadow(0 0 8px var(--lime-glow));
+  }
+  .big .corner.tl { top: 14px; left: 14px; border-right: 0; border-bottom: 0; border-radius: 8px 0 0 0; }
+  .big .corner.tr { top: 14px; right: 14px; border-left: 0; border-bottom: 0; border-radius: 0 8px 0 0; border-color: var(--cyan); filter: drop-shadow(0 0 8px var(--cyan-glow)); }
+  .big .corner.bl { bottom: 14px; left: 14px; border-right: 0; border-top: 0; border-radius: 0 0 0 8px; border-color: var(--cyan); filter: drop-shadow(0 0 8px var(--cyan-glow)); }
+  .big .corner.br { bottom: 14px; right: 14px; border-left: 0; border-top: 0; border-radius: 0 0 8px 0; border-color: var(--magenta); filter: drop-shadow(0 0 8px var(--magenta-glow)); }
+
+  .big .label {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    position: relative;
+    z-index: 2;
+    word-break: break-word;
+  }
+  .big .time {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: clamp(46px, 11.5vw, 104px);
+    font-weight: 800;
+    letter-spacing: -2px;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    position: relative;
+    z-index: 2;
+    color: var(--fg);
+    text-shadow:
+      0 0 18px rgba(198,255,0,0.35),
+      0 0 48px rgba(198,255,0,0.22),
+      0 0 90px rgba(0,229,255,0.18);
+    animation: litPulse 4s ease-in-out infinite;
+  }
+  @keyframes litPulse {
+    0%, 100% {
+      text-shadow:
+        0 0 18px rgba(198,255,0,0.35),
+        0 0 48px rgba(198,255,0,0.22),
+        0 0 90px rgba(0,229,255,0.18);
+    }
+    50% {
+      text-shadow:
+        0 0 24px rgba(198,255,0,0.55),
+        0 0 60px rgba(198,255,0,0.32),
+        0 0 110px rgba(0,229,255,0.28);
+    }
+  }
+  :root[data-theme="light"] .big .time {
+    text-shadow:
+      0 0 12px rgba(74,128,0,0.22),
+      0 0 32px rgba(0,122,153,0.14);
+    animation: none;
+  }
+
+  .big .time .sep {
+    color: var(--lime);
+    animation: blink 1s steps(1) infinite;
+    text-shadow: 0 0 16px var(--lime-glow);
+  }
+  @keyframes blink { 50% { opacity: 0.2; } }
+  .big .time .sec {
+    color: var(--cyan);
+    font-size: 0.55em;
+    text-shadow: 0 0 18px var(--cyan-glow);
+  }
+  .big .time .ampm {
+    font-size: 0.28em;
+    color: var(--magenta);
+    margin-left: 8px;
+    letter-spacing: 1px;
+    vertical-align: super;
+    text-shadow: 0 0 14px var(--magenta-glow);
+  }
+  .big .meta {
+    font-size: 14px;
+    color: var(--muted);
+    margin-top: 14px;
+    position: relative;
+    z-index: 2;
+  }
+  .big .meta b {
+    color: var(--fg);
+    font-weight: 700;
+    text-shadow: 0 0 12px rgba(198,255,0,0.25);
+  }
+
+  /* ============ SECTIONS ============ */
+  .section { margin-bottom: 18px; }
+  .section-title {
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.8px;
+    color: var(--muted);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-title .count {
+    font-weight: 800;
+    color: var(--lime);
+    background: rgba(198,255,0,0.10);
+    border: 1px solid rgba(198,255,0,0.28);
+    padding: 1px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    letter-spacing: 0;
+    text-shadow: 0 0 8px var(--lime-glow);
+  }
+
+  /* ============ GRID ============ */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 12px;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 14px 16px;
+    position: relative;
+    cursor: pointer;
+    transition: border-color 0.15s, transform 0.15s, box-shadow 0.2s,
+                background-color 0.25s, padding 0.2s;
+    overflow: hidden;
+    content-visibility: auto;
+    contain-intrinsic-size: auto 104px;
+  }
+  .card:hover {
+    border-color: var(--lime);
+    transform: translateY(-2px);
+    box-shadow:
+      0 0 0 1px rgba(198,255,0,0.25),
+      0 0 28px rgba(198,255,0,0.15),
+      0 14px 30px rgba(0,0,0,0.45);
+  }
+  :root[data-theme="light"] .card:hover {
+    box-shadow:
+      0 0 0 1px rgba(74,128,0,0.25),
+      0 0 22px rgba(74,128,0,0.10),
+      0 10px 24px rgba(0,0,0,0.08);
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: linear-gradient(180deg, var(--lime), var(--cyan));
+    opacity: 0.85;
+    transition: background 0.4s, box-shadow 0.3s;
+    box-shadow: 0 0 12px var(--lime-glow);
+  }
+  .card.is-night::before {
+    background: linear-gradient(180deg, var(--purple), var(--night));
+    box-shadow: 0 0 12px rgba(168,85,247,0.4);
+  }
+  .card.is-day::before {
+    background: linear-gradient(180deg, var(--day), #ff8800);
+    box-shadow: 0 0 12px rgba(255,204,0,0.45);
+  }
+  .card.is-fav::before {
+    opacity: 1;
+    background: linear-gradient(180deg, var(--magenta), var(--purple));
+    box-shadow: 0 0 16px var(--magenta-glow);
+  }
+  .card.is-fav.is-night::before {
+    background: linear-gradient(180deg, var(--purple), var(--night));
+  }
+  .card.is-fav.is-day::before {
+    background: linear-gradient(180deg, var(--magenta), var(--day));
+  }
+
+  .card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+  .country {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    flex: 1;
+  }
+  .country .flag {
+    font-size: 20px;
+    line-height: 1;
+    flex-shrink: 0;
+    filter: drop-shadow(0 0 6px rgba(255,255,255,0.08));
+  }
+  .country .name {
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.25;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .country .city {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 1px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .card-right {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  .tz-badge {
+    font-size: 10px;
+    font-weight: 800;
+    background: var(--card2);
+    border: 1px solid var(--line);
+    color: var(--muted);
+    padding: 2px 7px;
+    border-radius: 6px;
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.4px;
+    white-space: nowrap;
+  }
+  .tz-badge .diff {
+    color: var(--cyan);
+    margin-left: 3px;
+    text-shadow: 0 0 8px var(--cyan-glow);
+  }
+  .tz-badge .diff::before { content: '·'; color: var(--muted); margin-right: 3px; text-shadow: none; }
+
+  .star-btn {
+    border: 0;
+    background: transparent;
+    color: var(--muted);
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 2px 3px;
+    border-radius: 6px;
+    transition: color 0.15s, transform 0.15s, text-shadow 0.15s;
+    flex-shrink: 0;
+  }
+  .star-btn:hover {
+    color: var(--magenta);
+    transform: scale(1.2);
+    text-shadow: 0 0 12px var(--magenta-glow);
+  }
+  .star-btn.active {
+    color: var(--magenta);
+    text-shadow: 0 0 14px var(--magenta-glow);
+  }
+
+  .time-row {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-variant-numeric: tabular-nums;
+    margin-bottom: 6px;
+  }
+  .time-row .hms {
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: var(--fg);
+    text-shadow: 0 0 14px rgba(198,255,0,0.15);
+  }
+  .time-row .ampm {
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--cyan);
+    letter-spacing: 0.5px;
+    margin-left: 2px;
+    text-shadow: 0 0 10px var(--cyan-glow);
+  }
+
+  .day-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: var(--muted);
+    gap: 8px;
+  }
+  .day-row .day {
+    color: var(--fg);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-wrap: wrap;
+  }
+  .day-row .date { font-variant-numeric: tabular-nums; }
+
+  .day-badge {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 800;
+    padding: 1px 6px;
+    border-radius: 4px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    vertical-align: middle;
+  }
+  .day-badge.tomorrow {
+    background: rgba(0,229,255,0.14);
+    color: var(--cyan);
+    box-shadow: inset 0 0 0 1px rgba(0,229,255,0.3), 0 0 10px rgba(0,229,255,0.2);
+  }
+  .day-badge.yesterday {
+    background: rgba(168,85,247,0.14);
+    color: var(--purple);
+    box-shadow: inset 0 0 0 1px rgba(168,85,247,0.3), 0 0 10px rgba(168,85,247,0.2);
+  }
+
+  .card .copied {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(198,255,0,0.18), rgba(0,229,255,0.16));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--lime);
+    text-shadow: 0 0 14px var(--lime-glow);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+    backdrop-filter: blur(3px);
+  }
+  .card.copied .copied { opacity: 1; }
+
+  /* ============ COMPACT MODE ============ */
+  body.compact .card { padding: 8px 10px; border-radius: 11px; }
+  body.compact .card-head { margin-bottom: 4px; gap: 4px; }
+  body.compact .country .flag { font-size: 16px; }
+  body.compact .country .name { font-size: 11px; }
+  body.compact .country .city { display: none; }
+  body.compact .card-right { gap: 2px; }
+  body.compact .star-btn { font-size: 13px; padding: 1px 2px; }
+  body.compact .tz-badge { font-size: 9px; padding: 1px 5px; }
+  body.compact .time-row { margin-bottom: 0; }
+  body.compact .time-row .hms { font-size: 18px; letter-spacing: -0.3px; }
+  body.compact .time-row .ampm { font-size: 10px; }
+  body.compact .day-row { display: none; }
+  body.compact .grid {
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 8px;
+  }
+
+  /* ============ EMPTY ============ */
+  .empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+  }
+  .empty-emoji {
+    font-size: 54px;
+    margin-bottom: 10px;
+    opacity: 0.5;
+    filter: drop-shadow(0 0 20px var(--lime-glow));
+  }
+  .empty h3 { font-size: 15px; color: var(--fg); margin-bottom: 6px; }
+
+  /* ============ TOAST ============ */
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: 30px;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--card2);
+    border: 1px solid var(--line);
+    color: var(--fg);
+    padding: 11px 22px;
+    border-radius: 11px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.25s ease;
+    z-index: 300;
+    box-shadow:
+      inset 0 0 0 1px rgba(198,255,0,0.15),
+      0 12px 40px rgba(0,0,0,0.55),
+      0 0 32px rgba(198,255,0,0.16);
+    white-space: nowrap;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+    border-color: var(--lime);
+  }
+
+  @media (max-width: 600px) {
+    body { padding: 16px 10px 40px; }
+    header { margin: -8px 0 12px; padding: 8px 0 10px; gap: 10px; }
+    h1 { font-size: 17px; }
+    h1 .ico { width: 32px; height: 32px; font-size: 16px; }
+    .sub { margin-left: 0; margin-top: 6px; }
+    .search { flex: 1; min-width: 130px; }
+    .search input { width: 100%; }
+    .controls { gap: 6px; }
+    .grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .card { padding: 10px 12px; }
+    .country .name { font-size: 12px; }
+    .time-row .hms { font-size: 20px; }
+    .day-row { font-size: 11px; flex-direction: column; align-items: flex-start; gap: 2px; }
+    .big { padding: 24px 16px; border-radius: 18px; }
+    .big .corner { width: 16px; height: 16px; border-width: 2px; }
+    .big .corner.tl, .big .corner.tr { top: 10px; }
+    .big .corner.bl, .big .corner.br { bottom: 10px; }
+    .big .corner.tl, .big .corner.bl { left: 10px; }
+    .big .corner.tr, .big .corner.br { right: 10px; }
+    .toggle button { padding: 9px 10px; }
+    body.compact .grid { grid-template-columns: 1fr 1fr; }
+    body.compact .time-row .hms { font-size: 16px; }
+  }
+  @media (max-width: 380px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1><span class="ico">🕒</span> Мировые часы</h1>
+      <div class="sub">Точное время с секундами · показано <b id="totalCount">0</b> из <b id="allCount">0</b></div>
+    </div>
+    <div class="controls">
+      <div class="search" id="searchBox">
+        <input type="text" id="searchInput" placeholder="Поиск: страна, город, зона" autocomplete="off" spellcheck="false">
+        <button class="clear" id="clearSearch" type="button" title="Очистить">✕</button>
+      </div>
+      <div class="toggle" id="formatToggle">
+        <button data-fmt="24">24 ч</button>
+        <button data-fmt="12">12 ч</button>
+      </div>
+      <div class="toggle" id="sortToggle">
+        <button data-sort="offset">По UTC</button>
+        <button data-sort="alpha">А-Я</button>
+      </div>
+      <button class="icon-btn" id="compactBtn" title="Компактный режим" aria-label="Компактный режим">▦</button>
+      <button class="icon-btn" id="themeBtn" title="Сменить тему" aria-label="Сменить тему">☀️</button>
+    </div>
+  </header>
+
+  <div class="big">
+    <span class="corner tl"></span>
+    <span class="corner tr"></span>
+    <span class="corner bl"></span>
+    <span class="corner br"></span>
+    <div class="label" id="bigLabel">Моё время</div>
+    <div class="time" id="bigTime">--:--<span class="sep">:</span><span class="sec">--</span></div>
+    <div class="meta" id="bigMeta">—</div>
+  </div>
+
+  <div class="section" id="favSection" hidden>
+    <div class="section-title">⭐ Избранное <span class="count" id="favCount">0</span></div>
+    <div class="grid" id="favGrid"></div>
+  </div>
+
+  <div class="section" id="allSection">
+    <div class="section-title" id="allTitle">Все зоны</div>
+    <div class="grid" id="grid"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+
+/* ============================================================
+   0. ХРАНИЛИЩЕ (localStorage helpers)
+   ============================================================ */
+const LS = {
+  get(k, def) {
+    try {
+      const v = localStorage.getItem(k);
+      return v == null ? def : JSON.parse(v);
+    } catch { return def; }
+  },
+  set(k, v) {
+    try { localStorage.setItem(k, JSON.stringify(v)); } catch {}
+  }
+};
+
+/* ============================================================
+   1. КАРТА: IANA-зона -> ISO-код страны
+   ============================================================ */
+const RAW_ZONES = `
+Africa/Abidjan CI
+Africa/Accra GH
+Africa/Addis_Ababa ET
+Africa/Algiers DZ
+Africa/Asmara ER
+Africa/Bamako ML
+Africa/Bangui CF
+Africa/Banjul GM
+Africa/Bissau GW
+Africa/Blantyre MW
+Africa/Brazzaville CG
+Africa/Bujumbura BI
+Africa/Cairo EG
+Africa/Casablanca MA
+Africa/Ceuta ES
+Africa/Conakry GN
+Africa/Dakar SN
+Africa/Dar_es_Salaam TZ
+Africa/Djibouti DJ
+Africa/Douala CM
+Africa/El_Aaiun EH
+Africa/Freetown SL
+Africa/Gaborone BW
+Africa/Harare ZW
+Africa/Johannesburg ZA
+Africa/Juba SS
+Africa/Kampala UG
+Africa/Khartoum SD
+Africa/Kigali RW
+Africa/Kinshasa CD
+Africa/Lagos NG
+Africa/Libreville GA
+Africa/Lome TG
+Africa/Luanda AO
+Africa/Lubumbashi CD
+Africa/Lusaka ZM
+Africa/Malabo GQ
+Africa/Maputo MZ
+Africa/Maseru LS
+Africa/Mbabane SZ
+Africa/Mogadishu SO
+Africa/Monrovia LR
+Africa/Nairobi KE
+Africa/Ndjamena TD
+Africa/Niamey NE
+Africa/Nouakchott MR
+Africa/Ouagadougou BF
+Africa/Porto-Novo BJ
+Africa/Sao_Tome ST
+Africa/Tripoli LY
+Africa/Tunis TN
+Africa/Windhoek NA
+America/Adak US
+America/Anchorage US
+America/Anguilla AI
+America/Antigua AG
+America/Araguaina BR
+America/Argentina/Buenos_Aires AR
+America/Argentina/Catamarca AR
+America/Argentina/Cordoba AR
+America/Argentina/Jujuy AR
+America/Argentina/La_Rioja AR
+America/Argentina/Mendoza AR
+America/Argentina/Rio_Gallegos AR
+America/Argentina/Salta AR
+America/Argentina/San_Juan AR
+America/Argentina/San_Luis AR
+America/Argentina/Tucuman AR
+America/Argentina/Ushuaia AR
+America/Aruba AW
+America/Asuncion PY
+America/Atikokan CA
+America/Bahia BR
+America/Bahia_Banderas MX
+America/Barbados BB
+America/Belem BR
+America/Belize BZ
+America/Blanc-Sablon CA
+America/Boa_Vista BR
+America/Bogota CO
+America/Boise US
+America/Cambridge_Bay CA
+America/Campo_Grande BR
+America/Cancun MX
+America/Caracas VE
+America/Cayenne GF
+America/Cayman KY
+America/Chicago US
+America/Chihuahua MX
+America/Ciudad_Juarez MX
+America/Costa_Rica CR
+America/Coyhaique CL
+America/Creston CA
+America/Cuiaba BR
+America/Curacao CW
+America/Danmarkshavn GL
+America/Dawson CA
+America/Dawson_Creek CA
+America/Denver US
+America/Detroit US
+America/Dominica DM
+America/Edmonton CA
+America/Eirunepe BR
+America/El_Salvador SV
+America/Fort_Nelson CA
+America/Fortaleza BR
+America/Glace_Bay CA
+America/Goose_Bay CA
+America/Grand_Turk TC
+America/Grenada GD
+America/Guadeloupe GP
+America/Guatemala GT
+America/Guayaquil EC
+America/Guyana GY
+America/Halifax CA
+America/Havana CU
+America/Hermosillo MX
+America/Indiana/Indianapolis US
+America/Indiana/Knox US
+America/Indiana/Marengo US
+America/Indiana/Petersburg US
+America/Indiana/Tell_City US
+America/Indiana/Vevay US
+America/Indiana/Vincennes US
+America/Indiana/Winamac US
+America/Inuvik CA
+America/Iqaluit CA
+America/Jamaica JM
+America/Juneau US
+America/Kentucky/Louisville US
+America/Kentucky/Monticello US
+America/La_Paz BO
+America/Lima PE
+America/Los_Angeles US
+America/Maceio BR
+America/Managua NI
+America/Manaus BR
+America/Martinique MQ
+America/Matamoros MX
+America/Mazatlan MX
+America/Menominee US
+America/Merida MX
+America/Metlakatla US
+America/Mexico_City MX
+America/Miquelon PM
+America/Moncton CA
+America/Monterrey MX
+America/Montevideo UY
+America/Montserrat MS
+America/Nassau BS
+America/New_York US
+America/Nome US
+America/Noronha BR
+America/North_Dakota/Beulah US
+America/North_Dakota/Center US
+America/North_Dakota/New_Salem US
+America/Nuuk GL
+America/Ojinaga MX
+America/Panama PA
+America/Paramaribo SR
+America/Phoenix US
+America/Port-au-Prince HT
+America/Port_of_Spain TT
+America/Porto_Velho BR
+America/Puerto_Rico PR
+America/Punta_Arenas CL
+America/Rankin_Inlet CA
+America/Recife BR
+America/Regina CA
+America/Resolute CA
+America/Rio_Branco BR
+America/Santarem BR
+America/Santiago CL
+America/Santo_Domingo DO
+America/Sao_Paulo BR
+America/Scoresbysund GL
+America/Sitka US
+America/St_Johns CA
+America/St_Kitts KN
+America/St_Lucia LC
+America/St_Thomas VI
+America/St_Vincent VC
+America/Swift_Current CA
+America/Tegucigalpa HN
+America/Thule GL
+America/Tijuana MX
+America/Toronto CA
+America/Tortola VG
+America/Vancouver CA
+America/Whitehorse CA
+America/Winnipeg CA
+America/Yakutat US
+Antarctica/Casey AQ
+Antarctica/Davis AQ
+Antarctica/DumontDUrville AQ
+Antarctica/Macquarie AU
+Antarctica/Mawson AQ
+Antarctica/Palmer AQ
+Antarctica/Rothera AQ
+Antarctica/Syowa AQ
+Antarctica/Troll AQ
+Antarctica/Vostok AQ
+Arctic/Longyearbyen SJ
+Asia/Aden YE
+Asia/Almaty KZ
+Asia/Amman JO
+Asia/Anadyr RU
+Asia/Aqtau KZ
+Asia/Aqtobe KZ
+Asia/Ashgabat TM
+Asia/Atyrau KZ
+Asia/Baghdad IQ
+Asia/Bahrain BH
+Asia/Baku AZ
+Asia/Bangkok TH
+Asia/Barnaul RU
+Asia/Beirut LB
+Asia/Bishkek KG
+Asia/Brunei BN
+Asia/Chita RU
+Asia/Choibalsan MN
+Asia/Colombo LK
+Asia/Damascus SY
+Asia/Dhaka BD
+Asia/Dili TL
+Asia/Dubai AE
+Asia/Dushanbe TJ
+Asia/Famagusta CY
+Asia/Gaza PS
+Asia/Hebron PS
+Asia/Ho_Chi_Minh VN
+Asia/Hong_Kong HK
+Asia/Hovd MN
+Asia/Irkutsk RU
+Asia/Jakarta ID
+Asia/Jayapura ID
+Asia/Jerusalem IL
+Asia/Kabul AF
+Asia/Kamchatka RU
+Asia/Karachi PK
+Asia/Kathmandu NP
+Asia/Khandyga RU
+Asia/Kolkata IN
+Asia/Krasnoyarsk RU
+Asia/Kuala_Lumpur MY
+Asia/Kuching MY
+Asia/Kuwait KW
+Asia/Macau MO
+Asia/Magadan RU
+Asia/Makassar ID
+Asia/Manila PH
+Asia/Muscat OM
+Asia/Nicosia CY
+Asia/Novokuznetsk RU
+Asia/Novosibirsk RU
+Asia/Omsk RU
+Asia/Oral KZ
+Asia/Phnom_Penh KH
+Asia/Pontianak ID
+Asia/Pyongyang KP
+Asia/Qatar QA
+Asia/Qostanay KZ
+Asia/Qyzylorda KZ
+Asia/Riyadh SA
+Asia/Sakhalin RU
+Asia/Samarkand UZ
+Asia/Seoul KR
+Asia/Shanghai CN
+Asia/Singapore SG
+Asia/Srednekolymsk RU
+Asia/Taipei TW
+Asia/Tashkent UZ
+Asia/Tbilisi GE
+Asia/Tehran IR
+Asia/Thimphu BT
+Asia/Tokyo JP
+Asia/Tomsk RU
+Asia/Ulaanbaatar MN
+Asia/Urumqi CN
+Asia/Ust-Nera RU
+Asia/Vientiane LA
+Asia/Vladivostok RU
+Asia/Yakutsk RU
+Asia/Yangon MM
+Asia/Yekaterinburg RU
+Asia/Yerevan AM
+Atlantic/Azores PT
+Atlantic/Bermuda BM
+Atlantic/Canary ES
+Atlantic/Cape_Verde CV
+Atlantic/Faroe FO
+Atlantic/Madeira PT
+Atlantic/Reykjavik IS
+Atlantic/South_Georgia GS
+Atlantic/Stanley FK
+Australia/Adelaide AU
+Australia/Brisbane AU
+Australia/Broken_Hill AU
+Australia/Darwin AU
+Australia/Eucla AU
+Australia/Hobart AU
+Australia/Lindeman AU
+Australia/Lord_Howe AU
+Australia/Melbourne AU
+Australia/Perth AU
+Australia/Sydney AU
+Europe/Amsterdam NL
+Europe/Andorra AD
+Europe/Astrakhan RU
+Europe/Athens GR
+Europe/Belgrade RS
+Europe/Berlin DE
+Europe/Bratislava SK
+Europe/Brussels BE
+Europe/Bucharest RO
+Europe/Budapest HU
+Europe/Busingen DE
+Europe/Chisinau MD
+Europe/Copenhagen DK
+Europe/Dublin IE
+Europe/Gibraltar GI
+Europe/Guernsey GG
+Europe/Helsinki FI
+Europe/Isle_of_Man IM
+Europe/Istanbul TR
+Europe/Jersey JE
+Europe/Kaliningrad RU
+Europe/Kirov RU
+Europe/Kyiv UA
+Europe/Lisbon PT
+Europe/Ljubljana SI
+Europe/London GB
+Europe/Luxembourg LU
+Europe/Madrid ES
+Europe/Malta MT
+Europe/Mariehamn AX
+Europe/Minsk BY
+Europe/Monaco MC
+Europe/Moscow RU
+Europe/Oslo NO
+Europe/Paris FR
+Europe/Podgorica ME
+Europe/Prague CZ
+Europe/Riga LV
+Europe/Rome IT
+Europe/Samara RU
+Europe/San_Marino SM
+Europe/Sarajevo BA
+Europe/Saratov RU
+Europe/Simferopol UA
+Europe/Skopje MK
+Europe/Sofia BG
+Europe/Stockholm SE
+Europe/Tallinn EE
+Europe/Tirane AL
+Europe/Ulyanovsk RU
+Europe/Vaduz LI
+Europe/Vatican VA
+Europe/Vienna AT
+Europe/Vilnius LT
+Europe/Volgograd RU
+Europe/Warsaw PL
+Europe/Zagreb HR
+Europe/Zurich CH
+Indian/Antananarivo MG
+Indian/Chagos IO
+Indian/Christmas CX
+Indian/Cocos CC
+Indian/Comoro KM
+Indian/Kerguelen TF
+Indian/Mahe SC
+Indian/Maldives MV
+Indian/Mauritius MU
+Indian/Mayotte YT
+Indian/Reunion RE
+Pacific/Apia WS
+Pacific/Auckland NZ
+Pacific/Bougainville PG
+Pacific/Chatham NZ
+Pacific/Chuuk FM
+Pacific/Easter CL
+Pacific/Efate VU
+Pacific/Fakaofo TK
+Pacific/Fiji FJ
+Pacific/Funafuti TV
+Pacific/Galapagos EC
+Pacific/Gambier PF
+Pacific/Guadalcanal SB
+Pacific/Guam GU
+Pacific/Honolulu US
+Pacific/Kanton KI
+Pacific/Kiritimati KI
+Pacific/Kosrae FM
+Pacific/Kwajalein MH
+Pacific/Majuro MH
+Pacific/Marquesas PF
+Pacific/Midway UM
+Pacific/Nauru NR
+Pacific/Niue NU
+Pacific/Norfolk NF
+Pacific/Noumea NC
+Pacific/Pago_Pago AS
+Pacific/Palau PW
+Pacific/Pitcairn PN
+Pacific/Pohnpei FM
+Pacific/Port_Moresby PG
+Pacific/Rarotonga CK
+Pacific/Saipan MP
+Pacific/Tahiti PF
+Pacific/Tarawa KI
+Pacific/Tongatapu TO
+Pacific/Wake UM
+Pacific/Wallis WF
+UTC UN
+`;
+
+const TZ_ALIASES = {
+  'Europe/Kyiv': ['Europe/Kiev'],
+  'America/Nuuk': ['America/Godthab'],
+  'Asia/Kolkata': ['Asia/Calcutta'],
+  'Asia/Yangon': ['Asia/Rangoon'],
+  'Asia/Ho_Chi_Minh': ['Asia/Saigon'],
+  'Asia/Ulaanbaatar': ['Asia/Ulan_Bator'],
+  'Asia/Macau': ['Asia/Macao'],
+  'Pacific/Kanton': ['Pacific/Enderbury'],
+  'Asia/Qostanay': ['Asia/Kostanay'],
+  'America/Ciudad_Juarez': ['America/Ojinaga']
+};
+
+/* ============================================================
+   2. ПАРСИНГ ДАННЫХ
+   ============================================================ */
+const ZONE_CC = (() => {
+  const map = Object.create(null);
+  for (const line of RAW_ZONES.split('\n')) {
+    const s = line.trim();
+    if (!s) continue;
+    const sp = s.indexOf(' ');
+    if (sp < 0) continue;
+    map[s.slice(0, sp)] = s.slice(sp + 1).trim();
+  }
+  return map;
+})();
+
+const REGION_NAMES = (() => {
+  try { return new Intl.DisplayNames(['ru'], { type: 'region' }); }
+  catch { return null; }
+})();
+
+function flagOf(cc) {
+  if (!cc || cc.length !== 2) return '🌐';
+  const up = cc.toUpperCase();
+  if (!/^[A-Z]{2}$/.test(up)) return '🌐';
+  return String.fromCodePoint(...[...up].map(c => 0x1F1E6 + c.charCodeAt(0) - 65));
+}
+
+function countryName(cc) {
+  if (!cc) return 'Прочее';
+  if (cc === 'UN') return 'Всемирное время';
+  try {
+    const n = REGION_NAMES && REGION_NAMES.of(cc);
+    return n || cc;
+  } catch { return cc; }
+}
+
+function cityFromTz(tz) {
+  if (tz === 'UTC') return 'UTC · Гринвич';
+  const last = tz.split('/').pop();
+  return last.replace(/_/g, ' ');
+}
+
+/* ============================================================
+   3. ФОРМАТТЕРЫ И СМЕЩЕНИЯ
+   ============================================================ */
+const fmtCache = Object.create(null);
+
+function getFormatter(tz) {
+  let f = fmtCache[tz];
+  if (!f) {
+    f = new Intl.DateTimeFormat('en-US', {
+      timeZone: tz,
+      hourCycle: 'h23',
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit'
+    });
+    fmtCache[tz] = f;
+  }
+  return f;
+}
+
+function computeOffset(tz, date) {
+  const f = getFormatter(tz);
+  const parts = f.formatToParts(date);
+  const p = Object.create(null);
+  for (let i = 0; i < parts.length; i++) p[parts[i].type] = parts[i].value;
+
+  const asUTC = Date.UTC(
+    +p.year, +p.month - 1, +p.day,
+    +p.hour % 24, +p.minute, +p.second
+  );
+  const ts = date.getTime() - date.getMilliseconds();
+  return Math.round((asUTC - ts) / 60000);
+}
+
+function offsetLabel(min) {
+  const sign = min >= 0 ? '+' : '−';
+  const a = Math.abs(min);
+  return `UTC${sign}${String(Math.floor(a / 60)).padStart(2, '0')}:${String(a % 60).padStart(2, '0')}`;
+}
+
+function diffLabel(diffMin) {
+  if (diffMin === 0) return '0ч';
+  const sign = diffMin > 0 ? '+' : '−';
+  const a = Math.abs(diffMin);
+  const h = Math.floor(a / 60);
+  const m = a % 60;
+  return m === 0
+    ? `${sign}${h}ч`
+    : `${sign}${h}:${String(m).padStart(2, '0')}`;
+}
+
+/* ============================================================
+   4. ПОСТРОЕНИЕ СПИСКА ЗОН
+   ============================================================ */
+const WEEKDAYS = ['Воскресенье','Понедельник','Вторник','Среда','Четверг','Пятница','Суббота'];
+
+function resolveTz(tz) {
+  try { getFormatter(tz).format(new Date()); return tz; } catch { /* try aliases */ }
+  const alts = TZ_ALIASES[tz];
+  if (alts) {
+    for (const a of alts) {
+      try { getFormatter(a).format(new Date()); return a; } catch { /* next */ }
+    }
+  }
+  return null;
+}
+
+function buildZoneList() {
+  const set = new Set(Object.keys(ZONE_CC));
+
+  if (typeof Intl.supportedValuesOf === 'function') {
+    try {
+      for (const z of Intl.supportedValuesOf('timeZone')) {
+        if (/^Etc\//.test(z)) continue;
+        set.add(z);
+      }
+    } catch { /* ignore */ }
+  }
+
+  const out = [];
+  const seen = new Set();
+  for (const tz of set) {
+    const real = resolveTz(tz);
+    if (!real) continue;
+    if (seen.has(real)) continue;
+    seen.add(real);
+    const cc = ZONE_CC[tz] || '';
+    out.push({
+      tz: real,
+      id: tz,
+      cc,
+      flag: flagOf(cc),
+      country: countryName(cc),
+      city: cityFromTz(tz),
+      off: 0,
+      diff: 0
+    });
+  }
+  return out;
+}
+
+const ALL_ZONES = buildZoneList();
+
+/* ============================================================
+   5. СОСТОЯНИЕ
+   ============================================================ */
+const state = {
+  fmt: LS.get('wc:fmt', '24'),
+  sort: LS.get('wc:sort', 'offset'),
+  search: '',
+  theme: LS.get('wc:theme',
+    (typeof matchMedia === 'function' && matchMedia('(prefers-color-scheme: light)').matches)
+      ? 'light' : 'dark'
+  ),
+  compact: !!LS.get('wc:compact', false),
+  favorites: new Set(
+    (LS.get('wc:fav', []) || []).filter(id => ALL_ZONES.some(z => z.id === id))
+  )
+};
+
+const $ = id => document.getElementById(id);
+
+/* ============================================================
+   6. ТЕМА
+   ============================================================ */
+function applyTheme() {
+  document.documentElement.dataset.theme = state.theme;
+  const meta = $('metaThemeColor');
+  if (meta) meta.setAttribute('content', state.theme === 'dark' ? '#050510' : '#f6f7fc');
+  const btn = $('themeBtn');
+  if (btn) {
+    btn.textContent = state.theme === 'dark' ? '☀️' : '🌙';
+    btn.title = state.theme === 'dark' ? 'Светлая тема' : 'Тёмная тема';
+  }
+}
+
+/* ============================================================
+   7. КОМПАКТНЫЙ РЕЖИМ
+   ============================================================ */
+function applyCompact() {
+  document.body.classList.toggle('compact', state.compact);
+  const btn = $('compactBtn');
+  if (btn) btn.classList.toggle('active', state.compact);
+}
+
+/* ============================================================
+   8. БОЛЬШИЕ ЧАСЫ (локальная зона)
+   ============================================================ */
+const LOCAL_TZ = (() => {
+  try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'Локальная зона'; }
+  catch { return 'Локальная зона'; }
+})();
+
+function renderBig() {
+  const d = new Date();
+  const h24 = d.getHours();
+  const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
+  const pad = n => String(n).padStart(2, '0');
+  const ampm = h24 < 12 ? 'AM' : 'PM';
+
+  const hh = state.fmt === '24' ? pad(h24) : pad(h12);
+  const ampmHtml = state.fmt === '12' ? `<span class="ampm">${ampm}</span>` : '';
+
+  $('bigTime').innerHTML =
+    `${hh}<span class="sep">:</span>${pad(d.getMinutes())}` +
+    `<span class="sep">:</span><span class="sec">${pad(d.getSeconds())}</span>${ampmHtml}`;
+
+  const off = -d.getTimezoneOffset();
+  $('bigLabel').textContent = `Моё время · ${LOCAL_TZ} · ${offsetLabel(off)}`;
+
+  const months = ['января','февраля','марта','апреля','мая','июня',
+                  'июля','августа','сентября','октября','ноября','декабря'];
+  $('bigMeta').innerHTML =
+    `<b>${WEEKDAYS[d.getDay()]}</b> · ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+/* ============================================================
+   9. СЕТКА КАРТОЧЕК
+   ============================================================ */
+const grid = $('grid');
+const favGrid = $('favGrid');
+const favSection = $('favSection');
+const allSection = $('allSection');
+const allTitle = $('allTitle');
+
+let items = [];
+let itemById = new Map();
+
+function sortZones(list) {
+  if (state.sort === 'offset') {
+    return list.sort((a, b) => {
+      if (a.off !== b.off) return b.off - a.off;
+      return a.country.localeCompare(b.country, 'ru') ||
+             a.city.localeCompare(b.city, 'ru');
+    });
+  }
+  return list.sort((a, b) =>
+    a.country.localeCompare(b.country, 'ru') ||
+    a.city.localeCompare(b.city, 'ru') ||
+    a.id.localeCompare(b.id)
+  );
+}
+
+function matchesSearch(z, q) {
+  if (!q) return true;
+  return z.country.toLowerCase().includes(q) ||
+         z.city.toLowerCase().includes(q) ||
+         z.id.toLowerCase().includes(q) ||
+         z.cc.toLowerCase().includes(q);
+}
+
+function getLists() {
+  const q = state.search.trim().toLowerCase();
+  const favs = [];
+  const rest = [];
+  for (const z of ALL_ZONES) {
+    if (!matchesSearch(z, q)) continue;
+    if (state.favorites.has(z.id)) favs.push(z);
+    else rest.push(z);
+  }
+  return { favs: sortZones(favs), rest: sortZones(rest) };
+}
+
+function buildCard(z) {
+  const el = document.createElement('div');
+  el.className = 'card' + (state.favorites.has(z.id) ? ' is-fav' : '');
+  el.dataset.tz = z.id;
+  el.title = z.id;
+  el.innerHTML =
+    '<div class="card-head">' +
+      '<div class="country">' +
+        '<span class="flag">' + z.flag + '</span>' +
+        '<div style="min-width:0">' +
+          '<div class="name"></div>' +
+          '<div class="city"></div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="card-right">' +
+        '<button class="star-btn" type="button" aria-label="В избранное">☆</button>' +
+        '<span class="tz-badge"><span class="off"></span><span class="diff"></span></span>' +
+      '</div>' +
+    '</div>' +
+    '<div class="time-row"><span class="hms">--:--:--</span><span class="ampm"></span></div>' +
+    '<div class="day-row">' +
+      '<span class="day"><span class="day-name"></span></span>' +
+      '<span class="date"></span>' +
+    '</div>' +
+    '<div class="copied">Скопировано</div>';
+
+  el.querySelector('.name').textContent = z.country;
+  el.querySelector('.city').textContent = z.city;
+  el.querySelector('.tz-badge .off').textContent = offsetLabel(z.off);
+  el.querySelector('.tz-badge .diff').textContent = diffLabel(z.diff);
+
+  const starBtn = el.querySelector('.star-btn');
+  const isFav = state.favorites.has(z.id);
+  starBtn.textContent = isFav ? '★' : '☆';
+  starBtn.classList.toggle('active', isFav);
+
+  const item = {
+    zone: z,
+    el,
+    hms: el.querySelector('.hms'),
+    ampm: el.querySelector('.ampm'),
+    dayName: el.querySelector('.day-name'),
+    date: el.querySelector('.date'),
+    badge: el.querySelector('.tz-badge'),
+    badgeOff: el.querySelector('.tz-badge .off'),
+    badgeDiff: el.querySelector('.tz-badge .diff'),
+    starBtn,
+    _hms: '', _day: null, _date: '', _ampm: null, _night: null,
+    _diff: null, _dayDiff: null
+  };
+
+  el.addEventListener('click', () => copyCard(item));
+  starBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    toggleFavorite(z.id);
+  });
+
+  return item;
+}
+
+function toggleFavorite(id) {
+  if (state.favorites.has(id)) state.favorites.delete(id);
+  else state.favorites.add(id);
+  LS.set('wc:fav', Array.from(state.favorites));
+  rebuild();
+}
+
+function rebuild() {
+  const scrollY = window.scrollY;
+  const { favs, rest } = getLists();
+
+  $('totalCount').textContent = favs.length + rest.length;
+  $('allCount').textContent = ALL_ZONES.length;
+
+  if (favs.length > 0) {
+    favSection.hidden = false;
+    $('favCount').textContent = favs.length;
+  } else {
+    favSection.hidden = true;
+  }
+
+  favGrid.innerHTML = '';
+  grid.innerHTML = '';
+
+  items = [];
+  itemById = new Map();
+
+  const favFrag = document.createDocumentFragment();
+  for (const z of favs) {
+    const it = buildCard(z);
+    items.push(it);
+    itemById.set(z.id, it);
+    favFrag.appendChild(it.el);
+  }
+  favGrid.appendChild(favFrag);
+
+  const hasSearch = state.search.trim().length > 0;
+  allTitle.textContent = state.favorites.size > 0
+    ? (hasSearch ? 'Все зоны (кроме избранного)' : 'Все зоны')
+    : 'Все зоны';
+
+  if (!rest.length && !favs.length) {
+    grid.innerHTML =
+      '<div class="empty">' +
+        '<div class="empty-emoji">🔍</div>' +
+        '<h3>Ничего не найдено</h3>' +
+        '<p style="font-size:13px;margin-top:4px">Попробуй другой запрос</p>' +
+      '</div>';
+    allSection.hidden = false;
+  } else {
+    allSection.hidden = false;
+    const restFrag = document.createDocumentFragment();
+    for (const z of rest) {
+      const it = buildCard(z);
+      items.push(it);
+      itemById.set(z.id, it);
+      restFrag.appendChild(it.el);
+    }
+    grid.appendChild(restFrag);
+  }
+
+  updateAllCards();
+  if (scrollY > 0) window.scrollTo(0, scrollY);
+}
+
+function updateBadges() {
+  for (const it of items) {
+    it.badgeOff.textContent = offsetLabel(it.zone.off);
+    const dl = diffLabel(it.zone.diff);
+    if (it._diff !== dl) {
+      it.badgeDiff.textContent = dl;
+      it._diff = dl;
+    }
+  }
+}
+
+/* ============================================================
+   10. ОБНОВЛЕНИЕ ВРЕМЕНИ (каждую секунду)
+   ============================================================ */
+function updateAllCards() {
+  const ts = Date.now();
+  const is12 = state.fmt === '12';
+  const localNow = new Date();
+  const localY = localNow.getFullYear();
+  const localM = localNow.getMonth();
+  const localD = localNow.getDate();
+  const localOrd = Date.UTC(localY, localM, localD);
+
+  for (let i = 0; i < items.length; i++) {
+    const it = items[i];
+    const z = it.zone;
+
+    const d = new Date(ts + z.off * 60000);
+
+    const h24 = d.getUTCHours();
+    const mi = d.getUTCMinutes();
+    const se = d.getUTCSeconds();
+    const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
+
+    const hms = (is12 ? String(h12).padStart(2, '0') : String(h24).padStart(2, '0')) +
+                ':' + String(mi).padStart(2, '0') +
+                ':' + String(se).padStart(2, '0');
+
+    if (it._hms !== hms) {
+      it.hms.textContent = hms;
+      it._hms = hms;
+    }
+
+    const ap = is12 ? (h24 < 12 ? 'AM' : 'PM') : '';
+    if (it._ampm !== ap) {
+      it.ampm.textContent = ap;
+      it._ampm = ap;
+    }
+
+    const wd = d.getUTCDay();
+    if (it._day !== wd) {
+      it.dayName.textContent = WEEKDAYS[wd];
+      it._day = wd;
+    }
+
+    const zoneOrd = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+    const dayDiff = Math.round((zoneOrd - localOrd) / 86400000);
+    if (it._dayDiff !== dayDiff) {
+      const dayEl = it.el.querySelector('.day');
+      const oldBadge = dayEl.querySelector('.day-badge');
+      if (oldBadge) oldBadge.remove();
+      if (dayDiff === 1) {
+        const b = document.createElement('span');
+        b.className = 'day-badge tomorrow';
+        b.textContent = 'Завтра';
+        dayEl.appendChild(b);
+      } else if (dayDiff === -1) {
+        const b = document.createElement('span');
+        b.className = 'day-badge yesterday';
+        b.textContent = 'Вчера';
+        dayEl.appendChild(b);
+      }
+      it._dayDiff = dayDiff;
+    }
+
+    const dateStr = String(d.getUTCDate()).padStart(2, '0') + '.' +
+                    String(d.getUTCMonth() + 1).padStart(2, '0') + '.' +
+                    d.getUTCFullYear();
+    if (it._date !== dateStr) {
+      it.date.textContent = dateStr;
+      it._date = dateStr;
+    }
+
+    if (it._diff !== z.diff) {
+      it.badgeDiff.textContent = diffLabel(z.diff);
+      it._diff = z.diff;
+    }
+
+    const night = !(h24 >= 6 && h24 < 20);
+    if (it._night !== night) {
+      it.el.classList.toggle('is-night', night);
+      it.el.classList.toggle('is-day', !night);
+      it._night = night;
+    }
+  }
+}
+
+/* ============================================================
+   11. КОПИРОВАНИЕ
+   ============================================================ */
+function fallbackCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.setAttribute('readonly', '');
+  ta.style.cssText = 'position:fixed;top:-1000px;left:-1000px;opacity:0';
+  document.body.appendChild(ta);
+  ta.select();
+  let ok = false;
+  try { ok = document.execCommand('copy'); } catch { ok = false; }
+  document.body.removeChild(ta);
+  return ok;
+}
+
+async function copyCard(item) {
+  const d = new Date(Date.now() + item.zone.off * 60000);
+  const h24 = d.getUTCHours();
+  const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
+  const is12 = state.fmt === '12';
+  const hh = String(is12 ? h12 : h24).padStart(2, '0');
+  const ap = is12 ? ' ' + (h24 < 12 ? 'AM' : 'PM') : '';
+  const dateStr = String(d.getUTCDate()).padStart(2, '0') + '.' +
+                  String(d.getUTCMonth() + 1).padStart(2, '0') + '.' +
+                  d.getUTCFullYear();
+
+  const text = `${item.zone.flag} ${item.zone.country} (${item.zone.city}) — ` +
+               `${hh}:${String(d.getUTCMinutes()).padStart(2, '0')}:` +
+               `${String(d.getUTCSeconds()).padStart(2, '0')}${ap}, ` +
+               `${WEEKDAYS[d.getUTCDay()]}, ${dateStr} · ${offsetLabel(item.zone.off)} [${item.zone.id}]`;
+
+  let ok = false;
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      ok = true;
+    } else {
+      ok = fallbackCopy(text);
+    }
+  } catch {
+    ok = fallbackCopy(text);
+  }
+
+  if (ok) {
+    item.el.classList.add('copied');
+    clearTimeout(item.el._ct);
+    item.el._ct = setTimeout(() => item.el.classList.remove('copied'), 700);
+    showToast('Скопировано');
+  } else {
+    showToast('Не удалось скопировать');
+  }
+}
+
+/* ============================================================
+   12. TOAST
+   ============================================================ */
+function showToast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._tid);
+  t._tid = setTimeout(() => t.classList.remove('show'), 1600);
+}
+
+/* ============================================================
+   13. ОБНОВЛЕНИЕ СМЕЩЕНИЙ И РАЗНИЦ (раз в минуту)
+   ============================================================ */
+function refreshOffsets() {
+  const now = new Date();
+  const localOff = -now.getTimezoneOffset();
+  let changed = false;
+  for (const z of ALL_ZONES) {
+    const o = computeOffset(z.tz, now);
+    if (z.off !== o) { z.off = o; changed = true; }
+    z.diff = o - localOff;
+  }
+  if (changed) {
+    updateBadges();
+    if (state.sort === 'offset') rebuild();
+  }
+}
+
+/* ============================================================
+   14. ГЛАВНЫЙ ЦИКЛ (setTimeout, выровненный на секунду)
+   ============================================================ */
+function tick() {
+  renderBig();
+  updateAllCards();
+}
+
+let tickTimer = null;
+function scheduleTick() {
+  if (tickTimer) clearTimeout(tickTimer);
+  const delay = 1000 - (Date.now() % 1000) + 10;
+  tickTimer = setTimeout(() => {
+    tick();
+    scheduleTick();
+  }, delay);
+}
+function stopTick() {
+  if (tickTimer) { clearTimeout(tickTimer); tickTimer = null; }
+}
+
+/* ============================================================
+   15. СОБЫТИЯ
+   ============================================================ */
+const searchInput = $('searchInput');
+const searchBox = $('searchBox');
+let searchDebounce = null;
+
+searchInput.addEventListener('input', e => {
+  state.search = e.target.value;
+  searchBox.classList.toggle('has-value', state.search.length > 0);
+  clearTimeout(searchDebounce);
+  searchDebounce = setTimeout(() => rebuild(), 150);
+});
+
+$('clearSearch').addEventListener('click', () => {
+  searchInput.value = '';
+  state.search = '';
+  searchBox.classList.remove('has-value');
+  searchInput.focus();
+  clearTimeout(searchDebounce);
+  rebuild();
+});
+
+function setFormat(fmt) {
+  state.fmt = fmt;
+  LS.set('wc:fmt', fmt);
+  document.querySelectorAll('#formatToggle button').forEach(b =>
+    b.classList.toggle('active', b.dataset.fmt === fmt)
+  );
+  for (const it of items) { it._hms = ''; it._ampm = null; }
+  tick();
+}
+document.querySelectorAll('#formatToggle button').forEach(btn => {
+  btn.addEventListener('click', () => setFormat(btn.dataset.fmt));
+});
+
+function setSort(sort) {
+  state.sort = sort;
+  LS.set('wc:sort', sort);
+  document.querySelectorAll('#sortToggle button').forEach(b =>
+    b.classList.toggle('active', b.dataset.sort === sort)
+  );
+  rebuild();
+}
+document.querySelectorAll('#sortToggle button').forEach(btn => {
+  btn.addEventListener('click', () => setSort(btn.dataset.sort));
+});
+
+$('themeBtn').addEventListener('click', () => {
+  state.theme = state.theme === 'dark' ? 'light' : 'dark';
+  LS.set('wc:theme', state.theme);
+  applyTheme();
+});
+
+$('compactBtn').addEventListener('click', () => {
+  state.compact = !state.compact;
+  LS.set('wc:compact', state.compact);
+  applyCompact();
+});
+
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    stopTick();
+  } else {
+    refreshOffsets();
+    tick();
+    scheduleTick();
+  }
+});
+
+/* ============================================================
+   16. PWA (manifest + service worker)
+   ============================================================ */
+function setupPWA() {
+  try {
+    const iconSvg =
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">' +
+        '<defs>' +
+          '<linearGradient id="g" x1="0" y1="0" x2="1" y2="1">' +
+            '<stop offset="0" stop-color="#c6ff00"/>' +
+            '<stop offset="1" stop-color="#00e5ff"/>' +
+          '</linearGradient>' +
+        '</defs>' +
+        '<rect width="512" height="512" rx="96" fill="#050510"/>' +
+        '<rect x="20" y="20" width="472" height="472" rx="80" fill="url(#g)"/>' +
+        '<circle cx="256" cy="256" r="160" fill="none" stroke="#050510" stroke-width="26"/>' +
+        '<line x1="256" y1="256" x2="256" y2="152" stroke="#050510" stroke-width="26" stroke-linecap="round"/>' +
+        '<line x1="256" y1="256" x2="342" y2="298" stroke="#050510" stroke-width="26" stroke-linecap="round"/>' +
+        '<circle cx="256" cy="256" r="16" fill="#ff2e93"/>' +
+      '</svg>';
+    const iconDataUri = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(iconSvg);
+
+    const manifest = {
+      name: 'Мировые часы',
+      short_name: 'МирЧасы',
+      description: 'Точное время с секундами по всем часовым поясам',
+      start_url: '.',
+      scope: '.',
+      display: 'standalone',
+      orientation: 'any',
+      background_color: '#050510',
+      theme_color: '#050510',
+      lang: 'ru',
+      icons: [
+        { src: iconDataUri, sizes: '192x192', type: 'image/svg+xml', purpose: 'any' },
+        { src: iconDataUri, sizes: '512x512', type: 'image/svg+xml', purpose: 'any' },
+        { src: iconDataUri, sizes: '512x512', type: 'image/svg+xml', purpose: 'maskable' }
+      ]
+    };
+
+    const blob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('link');
+    link.rel = 'manifest';
+    link.href = url;
+    document.head.appendChild(link);
+
+    const appleLink = document.createElement('link');
+    appleLink.rel = 'apple-touch-icon';
+    appleLink.href = iconDataUri;
+    document.head.appendChild(appleLink);
+
+    const favLink = document.createElement('link');
+    favLink.rel = 'icon';
+    favLink.href = iconDataUri;
+    document.head.appendChild(favLink);
+  } catch (e) { /* silent */ }
+
+  if ('serviceWorker' in navigator &&
+      (location.protocol === 'http:' || location.protocol === 'https:')) {
+    try {
+      const swCode = `
+        const CACHE = 'world-clock-v2';
+        self.addEventListener('install', e => self.skipWaiting());
+        self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
+        self.addEventListener('fetch', e => {
+          if (e.request.method !== 'GET') return;
+          e.respondWith(
+            caches.open(CACHE).then(cache =>
+              fetch(e.request).then(res => {
+                if (res && res.ok && res.type === 'basic') {
+                  cache.put(e.request, res.clone());
+                }
+                return res;
+              }).catch(() => cache.match(e.request))
+            )
+          );
+        });
+      `;
+      const swBlob = new Blob([swCode], { type: 'application/javascript' });
+      const swUrl = URL.createObjectURL(swBlob);
+      navigator.serviceWorker.register(swUrl).catch(() => { /* ignore */ });
+    } catch (e) { /* silent */ }
+  }
+}
+
+(function init() {
+  applyTheme();
+  applyCompact();
+
+  document.querySelectorAll('#formatToggle button').forEach(b =>
+    b.classList.toggle('active', b.dataset.fmt === state.fmt)
+  );
+  document.querySelectorAll('#sortToggle button').forEach(b =>
+    b.classList.toggle('active', b.dataset.sort === state.sort)
+  );
+
+  refreshOffsets();
+  rebuild();
+  renderBig();
+  tick();
+  scheduleTick();
+  setInterval(refreshOffsets, 60000);
+
+  setupPWA();
+})();
+</script>
+</body>
+</html>
